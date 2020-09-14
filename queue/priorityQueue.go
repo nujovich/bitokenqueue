@@ -12,13 +12,8 @@ func (pq PriorityQueue) Len() int {
 	return len(pq)
 }
 
-func newPriorityQueue() *PriorityQueue {
-	return &PriorityQueue{}
-}
-
 func (pq PriorityQueue) Less(i, j int) bool {
-	// We want Pop to give us the highest, not lowest, priority so we use greater than here.
-	return pq[i].Priority > pq[j].Priority
+	return pq[i].Priority < pq[j].Priority
 }
 
 func (pq PriorityQueue) Swap(i, j int) {
@@ -45,7 +40,7 @@ func (pq *PriorityQueue) Pop() interface{} {
 }
 
 // update modifies the priority and value of an Item in the queue.
-func (pq *PriorityQueue) update(event *event.Event, value string, priority int64) {
+func (pq *PriorityQueue) Update(event *event.Event, value string, priority int64) {
 	event.Data = value
 	event.Priority = priority
 	heap.Fix(pq, event.Index)
