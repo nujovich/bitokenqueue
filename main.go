@@ -1,16 +1,37 @@
+//Current main program
 package main
 
 import (
 	"container/heap"
+	"encoding/json"
+	"errors"
 	"fmt"
+	"io/ioutil"
+	"os"
 	"sync"
 	"time"
 
+	"github.com/nujovich/bitokenqueue/customlogger"
 	"github.com/nujovich/bitokenqueue/event"
 	"github.com/nujovich/bitokenqueue/queue"
 )
 
+//Configuration struct holds the env variable info setup in env.json
+//By default Logs is set to false
+type Configuration struct {
+	Logs bool `json:"Logs"`
+}
+
+//Const holding the path to env file
+const FILENAME string = "env.json"
+
 func main() {
+	jsonFile, _ := os.Open(FILENAME)
+	byteValue, _ := ioutil.ReadAll(jsonFile)
+	var config Configuration
+	json.Unmarshal(byteValue, &config)
+	Logger, error := isLoggingTrue(config.Logs)
+
 	// Some events and their priorities.
 	wg := new(sync.WaitGroup)
 	priority1 := time.Now().Add(time.Minute*3).UnixNano() / int64(time.Millisecond)
@@ -52,14 +73,34 @@ func main() {
 			e = heap.Pop(&pq).(*event.Event)
 			go e.Callback(e.Priority, e.Data)
 			time.Sleep(1 * time.Second)
-			fmt.Println("Done processing: " + e.Data)
+			if error == nil {
+				Logger.Print("Done processing: " + e.Data)
+			} else {
+				fmt.Println("Done processing: " + e.Data)
+			}
 		}
 	}
 	wg.Wait()
-	fmt.Println("Waiting all go routines to finish")
-	fmt.Println("Done processing queue, elements ", pq.Len())
+	if error == nil {
+		Logger.Print("Waiting all go routines to finish")
+		Logger.Print("Done processing queue, elements ", pq.Len())
+	} else {
+		fmt.Println("Waiting all go routines to finish")
+		fmt.Println("Done processing queue, elements ", pq.Len())
+	}
 }
 
+//makeTimestamp() Returns the time.Now() as milliseconds
 func makeTimestamp() int64 {
 	return time.Now().UnixNano() / int64(time.Millisecond)
+}
+
+//isLogginTrue returns an instace of CustomLogger if the Logs env variable is set to true
+//it returns an error on the contrary
+func isLoggingTrue(env bool) (customlogger.CustomLogger, error) {
+	if env == true {
+		return customlogger.GetInstance(), nil
+	} else {
+		return customlogger.CustomLogger{}, errors.New("No logging set")
+	}
 }
