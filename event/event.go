@@ -1,7 +1,11 @@
 //Package event provide a struct that represent the information about an event
 package event
 
-import "fmt"
+import (
+	"fmt"
+	"sync"
+	"time"
+)
 
 type Event struct {
 	Priority int64  //the date that the event must run
@@ -11,6 +15,8 @@ type Event struct {
 
 //Callback just outputs a message when the event is
 //eligible for execution on the heap
-func (e Event) Callback(priority int64, data string) {
+func (e Event) Callback(priority int64, data string, wg *sync.WaitGroup) {
+	defer wg.Done()
 	fmt.Printf("Executing '%.2d:%s' ", priority, data)
+	time.Sleep(1 * time.Second)
 }

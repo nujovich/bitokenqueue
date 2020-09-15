@@ -70,9 +70,9 @@ func main() {
 		now := makeTimestamp()
 		interval := time.Now().Add(time.Second*1).UnixNano() / int64(time.Millisecond)
 		if e.Priority >= now && e.Priority <= interval {
+			wg.Add(1)
 			e = heap.Pop(&pq).(*event.Event)
-			go e.Callback(e.Priority, e.Data)
-			time.Sleep(1 * time.Second)
+			go e.Callback(e.Priority, e.Data, wg)
 			if error == nil {
 				Logger.Print("Done processing: " + e.Data)
 			} else {
