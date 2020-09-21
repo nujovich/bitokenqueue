@@ -30,17 +30,16 @@ go run main.go
 ```
 When the events execution starts you will see the information about the event being executed:
 ```bash
-Executing '1600175640538:Event2' Done processing: Event2
+Event : Event3, 2020-09-21T16:22:55.7114467-03:00
+Event : Event2, 2020-09-21T16:24:55.7114467-03:00
+Event : Event1, 2020-09-21T16:26:55.7114467-03:00
 ```
-The callback function inside each event is being called as a go routine. This was thought in case of more than one event sharing the same priority. To see the results of the go routine before giving the control back to main() function, I added a sleep of 1 second to see the printed message: Executing '1600175640538:Event2'
+The callback function inside each event is being called as a go routine. This was thought in case of more than one event sharing the same priority. 
 ```bash
-go e.Callback(e.Priority, e.Data)
-time.Sleep(1 * time.Second)
+go e.Callback(e.Priority, e.Data, wg)
 ```
 
-2. The main() function contains a set of pre-defined events to initialize the priority queue and to show the update() and delete() functions. Feel free to change this information to suit your need
-
-3. By default, the application doesn't generate log information. To change that, update the env variable Logs located in env.json to true
+2. By default, the application doesn't generate log information. To change that, update the env variable Logs located in env.json to true
 ```bash
 {
     "Logs": true
@@ -50,17 +49,18 @@ time.Sleep(1 * time.Second)
 ## Logs file
 The logs file will be located at root directory of the application. The file is called mylogger.log
 ```bash
-INFO: main.go:73: Done processing: Event2
-INFO: main.go:73: Done processing: Event1
-INFO: main.go:81: Waiting all go routines to finish
-INFO: main.go:82: Done processing queue, elements 0
+INFO: main.go:75: Done processing: Event3 Date Priority: 2020-09-21T16:16:16.7396926-03:00
+INFO: main.go:75: Done processing: Event2 Date Priority: 2020-09-21T16:18:16.7396926-03:00
+INFO: main.go:75: Done processing: Event1 Date Priority: 2020-09-21T16:20:16.7396926-03:00
+INFO: main.go:82: Waiting all go routines to finish
+INFO: main.go:83: Done processing queue, elements 0
 ```
 
 ## Go documentation
 As part of the source code
 
 ## Time-space analysis - Concurrency and free resources
-I decided to implement a while iteration until the priority queue's length arrives to zero. During the loop I get the first element of the heap, knowing that's the event with top priority for execution. I analize if this event needs to be executed at this time plus an interval of 1 second. If this happends to be true, the callback function is being invoked as a go routine. I decided also to implement a wait group variable. When the go routine is invoked the wg counter increments by one. During the execution, the countiner is decreased. When all the events are executed and the Len() returns zero, I invoke the Wait() method to free resources from the go routines in case there's any being taken by that time
+I decided to implement a while iteration until the priority queue's length arrives to zero. During the loop, I pop the first element of the queue and implement the Sleep() function until the event is ready for execution. When that happens, the callback function is being invoked as a go routine. I decided also to implement a wait group variable. When the go routine is invoked the wg counter increments by one. During the execution, the countiner is decreased. When all the events are executed and the Len() returns zero, I invoke the Wait() method to free resources from the go routines in case there's any being taken by that time
 ```bash
 //At the beggining, initialized wg variable
 wg := new(sync.WaitGroup)
@@ -68,16 +68,33 @@ wg := new(sync.WaitGroup)
 .
 .
 .
+for pq.Len() > 0 {
+		wg.Add(1)
+		e := heap.Pop(&pq).(*event.Event)
+		diff := time.Until(e.Priority)
+		time.Sleep(1 * diff)
+		go e.Callback(e.Priority, e.Data, wg)
+		if error == nil {
+			Logger.Print("Done processing: " + e.Data + " Date Priority: " + e.Priority.Format(time.RFC3339Nano))
+		} else {
+			fmt.Println("Done processing: " + e.Data)
+		}
+	}
+.
+.
+.
+.
+.
 //Add 1 to wg variable every time callback is invoked
 wg.Add(1)
-go e.Callback(e.Priority, e.Data)
-time.Sleep(1 * time.Second)
+go e.Callback(e.Priority, e.Data, wg)
 .
 .
 .
 .
 //Notify that the go routine is finished inside callback
 defer wg.Done()
+time.Sleep(2 * time.Second)
 //When the execution is finished, invoke Wait() 
 //to make sure all go routines are finished and free resources
 wg.Wait()

@@ -3,6 +3,7 @@ package queue
 
 import (
 	"container/heap"
+	"time"
 
 	"github.com/nujovich/bitokenqueue/event"
 )
@@ -19,7 +20,7 @@ func (pq PriorityQueue) Len() int {
 //It returns true if first event will execute as top priority
 //It return false on the contrary
 func (pq PriorityQueue) Less(i, j int) bool {
-	return pq[i].Priority < pq[j].Priority
+	return pq[i].Priority.Before(pq[j].Priority)
 }
 
 //Swap() takes as param two indexes and changes the information holding on both events indexes
@@ -51,7 +52,7 @@ func (pq *PriorityQueue) Pop() interface{} {
 }
 
 //Up() modifies the priority and data of an event in the queue.
-func (pq *PriorityQueue) Update(event *event.Event, value string, priority int64) {
+func (pq *PriorityQueue) Update(event *event.Event, value string, priority time.Time) {
 	event.Data = value
 	event.Priority = priority
 	heap.Fix(pq, event.Index)

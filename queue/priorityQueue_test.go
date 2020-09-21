@@ -3,6 +3,7 @@ package queue
 import (
 	"reflect"
 	"testing"
+	"time"
 
 	"github.com/nujovich/bitokenqueue/event"
 )
@@ -31,19 +32,19 @@ func TestPriorityQueue_Less(t *testing.T) {
 	pq1 := make(PriorityQueue, 4)
 	e1 := &event.Event{
 		Data:     "Event1",
-		Priority: 1600192960000,
+		Priority: time.Now().Add(time.Minute * 2),
 	}
 	e2 := &event.Event{
 		Data:     "Event2",
-		Priority: 1600092960000,
+		Priority: time.Now().Add(time.Minute * 1),
 	}
 	e3 := &event.Event{
 		Data:     "Event3",
-		Priority: 1600092960000,
+		Priority: time.Now().Add(time.Minute * 2),
 	}
 	e4 := &event.Event{
 		Data:     "Event4",
-		Priority: 1600192960000,
+		Priority: time.Now().Add(time.Minute * 3),
 	}
 	pq1[0] = e1
 	pq1[1] = e2
@@ -76,11 +77,11 @@ func TestPriorityQueue_Swap(t *testing.T) {
 	pq1 := make(PriorityQueue, 4)
 	e1 := &event.Event{
 		Data:     "Event1",
-		Priority: 1600192960000,
+		Priority: time.Now().Add(time.Minute * 3),
 	}
 	e2 := &event.Event{
 		Data:     "Event2",
-		Priority: 1600092960000,
+		Priority: time.Now().Add(time.Minute * 2),
 	}
 	pq1[0] = e1
 	pq1[1] = e2
@@ -106,7 +107,7 @@ func TestPriorityQueue_Push(t *testing.T) {
 	pq1 := make(PriorityQueue, 1)
 	e1 := &event.Event{
 		Data:     "Event1",
-		Priority: 1600192960000,
+		Priority: time.Now().Add(time.Minute * 2),
 	}
 
 	pq1[0] = e1
@@ -132,7 +133,7 @@ func TestPriorityQueue_Pop(t *testing.T) {
 	pq1 := make(PriorityQueue, 1)
 	e1 := &event.Event{
 		Data:     "Event1",
-		Priority: 1600192960000,
+		Priority: time.Now().Add(time.Minute * 2),
 	}
 
 	pq1[0] = e1
@@ -156,19 +157,19 @@ func TestPriorityQueue_Update(t *testing.T) {
 	pq1 := make(PriorityQueue, 1)
 	e1 := &event.Event{
 		Data:     "Event1",
-		Priority: 1600192960000,
+		Priority: time.Now().Add(time.Minute * 2),
 	}
 	type args struct {
 		event    *event.Event
 		value    string
-		priority int64
+		priority time.Time
 	}
 	tests := []struct {
 		name string
 		pq   *PriorityQueue
 		args args
 	}{
-		{"Testing updating priority on event ()", &pq1, args{e1, "Event1", 1600092960000}},
+		{"Testing updating priority on event ()", &pq1, args{e1, "Event1", time.Now().Add(time.Minute * 1)}},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

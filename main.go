@@ -34,50 +34,47 @@ func main() {
 
 	// Some events and their priorities.
 	wg := new(sync.WaitGroup)
-	priority1 := time.Now().Add(time.Minute*3).UnixNano() / int64(time.Millisecond)
-	priority2 := time.Now().Add(time.Minute*5).UnixNano() / int64(time.Millisecond)
-	events := map[string]int64{
+	priority1 := time.Now().Add(time.Minute * 3)
+	priority2 := time.Now().Add(time.Minute * 5)
+	events := map[string]time.Time{
 		"Event1": priority2, "Event2": priority1,
 	}
 
 	// Create a priority queue, put the events in it, and
 	// establish the priority queue (heap) invariants.
-	pq := make(queue.PriorityQueue, len(events))
+	pq := make(queue.PriorityQueue, 0)
+	heap.Init(&pq)
 	i := 0
 	for data, priority := range events {
-		pq[i] = &event.Event{
+		e1 := &event.Event{
 			Data:     data,
 			Priority: priority,
 			Index:    i,
 		}
+		heap.Push(&pq, e1)
 		i++
 	}
-	heap.Init(&pq)
 
 	//Insert a new item and then modify its priority.
 	e := &event.Event{
 		Data:     "Event3",
-		Priority: time.Now().Add(time.Minute*2).UnixNano() / int64(time.Millisecond),
+		Priority: time.Now().Add(time.Minute * 2),
 	}
+	newPriority := time.Now().Add(time.Minute * 1)
 	heap.Push(&pq, e)
-	newPriority := time.Now().Add(time.Minute*1).UnixNano() / int64(time.Millisecond)
 	pq.Update(e, e.Data, newPriority)
-	//Delete it from queue
-	heap.Remove(&pq, 0)
+
 	// Take the items out; they arrive in increasing priority order.
 	for pq.Len() > 0 {
-		e := pq[0]
-		now := makeTimestamp()
-		interval := time.Now().Add(time.Second*1).UnixNano() / int64(time.Millisecond)
-		if e.Priority >= now && e.Priority <= interval {
-			wg.Add(1)
-			e = heap.Pop(&pq).(*event.Event)
-			go e.Callback(e.Priority, e.Data, wg)
-			if error == nil {
-				Logger.Print("Done processing: " + e.Data)
-			} else {
-				fmt.Println("Done processing: " + e.Data)
-			}
+		wg.Add(1)
+		e := heap.Pop(&pq).(*event.Event)
+		diff := time.Until(e.Priority)
+		time.Sleep(1 * diff)
+		go e.Callback(e.Priority, e.Data, wg)
+		if error == nil {
+			Logger.Print("Done processing: " + e.Data + " Date Priority: " + e.Priority.Format(time.RFC3339Nano))
+		} else {
+			fmt.Println("Done processing: " + e.Data)
 		}
 	}
 	wg.Wait()
@@ -88,11 +85,6 @@ func main() {
 		fmt.Println("Waiting all go routines to finish")
 		fmt.Println("Done processing queue, elements ", pq.Len())
 	}
-}
-
-//makeTimestamp() Returns the time.Now() as milliseconds
-func makeTimestamp() int64 {
-	return time.Now().UnixNano() / int64(time.Millisecond)
 }
 
 //isLogginTrue returns an instace of CustomLogger if the Logs env variable is set to true

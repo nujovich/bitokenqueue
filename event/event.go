@@ -8,15 +8,15 @@ import (
 )
 
 type Event struct {
-	Priority int64  //the date that the event must run
-	Data     string //the atbiratry data of the item
-	Index    int    //the index of the item in the heap
+	Priority time.Time //the date that the event must run
+	Data     string    //the atbiratry data of the item
+	Index    int       //the index of the item in the heap
 }
 
 //Callback just outputs a message when the event is
 //eligible for execution on the heap
-func (e Event) Callback(priority int64, data string, wg *sync.WaitGroup) {
+func (e Event) Callback(priority time.Time, data string, wg *sync.WaitGroup) {
 	defer wg.Done()
-	fmt.Printf("Executing '%.2d:%s' ", priority, data)
-	time.Sleep(1 * time.Second)
+	fmt.Println("Event : " + data + ", " + priority.Format(time.RFC3339Nano))
+	time.Sleep(2 * time.Second)
 }
