@@ -84,14 +84,6 @@ for pq.Len() > 0 {
 .
 .
 .
-.
-//Add 1 to wg variable every time callback is invoked
-wg.Add(1)
-go e.Callback(e.Priority, e.Data, wg)
-.
-.
-.
-.
 //Notify that the go routine is finished inside callback
 defer wg.Done()
 time.Sleep(2 * time.Second)
