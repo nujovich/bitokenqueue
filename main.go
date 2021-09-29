@@ -90,7 +90,7 @@ func main() {
 //isLogginTrue returns an instace of CustomLogger if the Logs env variable is set to true
 //it returns an error on the contrary
 func isLoggingTrue(env bool) (customlogger.CustomLogger, error) {
-	if env == true {
+	if env {
 		return customlogger.GetInstance(), nil
 	} else {
 		return customlogger.CustomLogger{}, errors.New("No logging set")
